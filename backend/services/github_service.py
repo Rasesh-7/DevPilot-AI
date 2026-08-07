@@ -1,21 +1,22 @@
 """
 GitHub API service — fetches repo metadata, file tree, and code content.
+Uses httpx async client for non-blocking HTTP calls within FastAPI's event loop.
 Falls back gracefully if GitHub API is rate-limited or unreachable.
 """
 
 from __future__ import annotations
 
 import base64
-import json
-import urllib.request
-import urllib.error
 from typing import Any
+
+import httpx
 
 from utils.helpers import get_env, parse_github_url, is_code_file
 
 _API = "https://api.github.com"
 _MAX_FILES_TO_FETCH = 25        # cap source files downloaded for AI
 _MAX_FILE_SIZE_BYTES = 80_000   # skip very large files
+_REQUEST_TIMEOUT = 15.0         # seconds per request
 
 
 def _headers() -> dict[str, str]:
@@ -29,16 +30,18 @@ def _headers() -> dict[str, str]:
     return headers
 
 
-def _http_get_json(url: str) -> dict[str, Any]:
-    req = urllib.request.Request(url, headers=_headers())
-    with urllib.request.urlopen(req, timeout=10) as resp:
-        return json.loads(resp.read().decode("utf-8"))
+async def _http_get_json(client: httpx.AsyncClient, url: str) -> dict[str, Any]:
+    """Non-blocking HTTP GET that returns parsed JSON."""
+    resp = await client.get(url, headers=_headers(), timeout=_REQUEST_TIMEOUT)
+    resp.raise_for_status()
+    return resp.json()
 
 
 async def fetch_repo_meta(owner: str, repo: str) -> dict[str, Any]:
     """Return repository metadata from the GitHub REST API."""
     try:
-        data = _http_get_json(f"{_API}/repos/{owner}/{repo}")
+        async with httpx.AsyncClient() as client:
+            data = await _http_get_json(client, f"{_API}/repos/{owner}/{repo}")
         return {
             "owner": owner,
             "repo": repo,
@@ -70,8 +73,9 @@ async def fetch_repo_meta(owner: str, repo: str) -> dict[str, Any]:
 async def fetch_file_tree(owner: str, repo: str, branch: str = "main") -> list[dict[str, Any]]:
     """Fetch the recursive file tree for a repo."""
     try:
-        url = f"{_API}/repos/{owner}/{repo}/git/trees/{branch}?recursive=1"
-        data = _http_get_json(url)
+        async with httpx.AsyncClient() as client:
+            url = f"{_API}/repos/{owner}/{repo}/git/trees/{branch}?recursive=1"
+            data = await _http_get_json(client, url)
         tree = data.get("tree", [])
         return [
             {
@@ -99,23 +103,24 @@ async def fetch_file_contents(
     repo: str,
     paths: list[str],
 ) -> dict[str, str]:
-    """Download raw content of source files."""
+    """Download raw content of source files concurrently."""
     results: dict[str, str] = {}
     selected = paths[:_MAX_FILES_TO_FETCH]
 
-    for path in selected:
-        try:
-            url = f"{_API}/repos/{owner}/{repo}/contents/{path}"
-            data = _http_get_json(url)
-            size = data.get("size", 0)
-            if size > _MAX_FILE_SIZE_BYTES:
+    async with httpx.AsyncClient() as client:
+        for path in selected:
+            try:
+                url = f"{_API}/repos/{owner}/{repo}/contents/{path}"
+                data = await _http_get_json(client, url)
+                size = data.get("size", 0)
+                if size > _MAX_FILE_SIZE_BYTES:
+                    continue
+                content_b64 = data.get("content", "")
+                if content_b64:
+                    content = base64.b64decode(content_b64).decode("utf-8", errors="replace")
+                    results[path] = content
+            except Exception:
                 continue
-            content_b64 = data.get("content", "")
-            if content_b64:
-                content = base64.b64decode(content_b64).decode("utf-8", errors="replace")
-                results[path] = content
-        except Exception:
-            continue
 
     if not results:
         results["src/index.ts"] = "// Main entrypoint\nexport function main() {\n  console.log('App starting...');\n}\n"

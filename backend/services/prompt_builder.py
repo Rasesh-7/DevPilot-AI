@@ -81,6 +81,11 @@ Return EXACTLY this structure (populate with real values):
       "suggestion": "<what to test>"
     }}
   ],
+  "suggested_commit_messages": [
+    "feat(core): <conventional commit summary>",
+    "fix(security): <conventional commit fix summary>",
+    "docs: <conventional commit documentation summary>"
+  ],
   "documentation_snippet": "Write a clean, professional, and easy-to-understand developer guide in Markdown format for this repository. Include these exact sections:\n# [Repository Name] Developer Guide\n\n## 1. Executive Summary\nClear, simple explanation of what this project does and its main purpose.\n\n## 2. Architecture & Tech Stack\nHigh-level system design, primary language, frameworks, and key design patterns.\n\n## 3. Core File Map & Key Roles\nList the most important files found in the code and explain what each file does.\n\n## 4. Quick Start & Developer Setup\nProvide exact step-by-step commands (using code blocks ```bash ... ```) to clone, install dependencies, run, and test the application."
 }}
 

@@ -71,5 +71,6 @@ class AnalysisResult(BaseModel):
     code_smells: list[CodeSmellItem] = Field(default_factory=list)
     performance_suggestions: list[PerformanceSuggestion] = Field(default_factory=list)
     test_suggestions: list[TestSuggestion] = Field(default_factory=list)
+    suggested_commit_messages: list[str] = Field(default_factory=list)
     documentation_snippet: str = ""
     analyzed_at: str = ""

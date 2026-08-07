@@ -92,6 +92,7 @@ async def analyze(request: AnalyzeRequest):
             PerformanceSuggestion(**p) for p in ai_result.get("performance_suggestions", [])
         ],
         test_suggestions=[TestSuggestion(**t) for t in ai_result.get("test_suggestions", [])],
+        suggested_commit_messages=ai_result.get("suggested_commit_messages", []),
         documentation_snippet=ai_result.get("documentation_snippet", ""),
         analyzed_at=datetime.now(timezone.utc).isoformat(),
     )

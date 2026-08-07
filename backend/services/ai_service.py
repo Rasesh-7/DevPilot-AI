@@ -37,12 +37,10 @@ async def run_ai_analysis(
         genai.configure(api_key=api_key)  # type: ignore
 
         candidate_models = [
-            "gemini-flash-latest",
-            "gemini-2.5-flash",
-            "gemini-2.0-flash",
-            "gemini-1.5-flash",
             "gemini-3.5-flash",
             "gemini-3.6-flash",
+            "gemini-flash-latest",
+            "gemini-2.0-flash",
         ]
 
         for model_name in candidate_models:
@@ -246,6 +244,14 @@ def _generate_dynamic_analysis(
         },
     ]
 
+    # Suggested Conventional Commit Messages
+    suggested_commit_messages = [
+        f"feat(core): refine primary handling routines in {f1.split('/')[-1]}",
+        f"fix(security): sanitize user inputs in {f2.split('/')[-1]}",
+        f"refactor(utils): modularize utility helpers and reduce duplication in {f3.split('/')[-1]}",
+        f"docs(readme): add executive developer guide and architecture summary",
+    ]
+
     # Custom README snippet
     documentation_snippet = (
         f"# {repo} Developer Guide\n\n"
@@ -284,6 +290,7 @@ def _generate_dynamic_analysis(
         "code_smells": code_smells,
         "performance_suggestions": performance_suggestions,
         "test_suggestions": test_suggestions,
+        "suggested_commit_messages": suggested_commit_messages,
         "documentation_snippet": documentation_snippet,
     }
 
