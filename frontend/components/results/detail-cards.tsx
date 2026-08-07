@@ -64,15 +64,29 @@ const severityConfig: Record<string, { tint: string; bar: string }> = {
 }
 
 export function BugDetectionCard({ bugs }: BugDetectionProps) {
-  // Group bugs by severity
+  const [selectedSev, setSelectedSev] = useState<string | null>(null)
+  const [searchTerm, setSearchTerm] = useState('')
+
+  const displayBugs = bugs ?? []
   const levels = ['critical', 'high', 'medium', 'low'] as const
   const counts = levels.map((sev) => ({
     label: sev.charAt(0).toUpperCase() + sev.slice(1),
-    value: bugs?.filter((b) => b.severity === sev).length ?? 0,
+    severity: sev,
+    value: displayBugs.filter((b) => b.severity === sev).length,
     ...severityConfig[sev],
   }))
   const total = counts.reduce((s, c) => s + c.value, 0)
   const max = Math.max(...counts.map((c) => c.value), 1)
+
+  const filteredBugs = displayBugs.filter((bug) => {
+    const matchesSev = selectedSev ? bug.severity === selectedSev : true
+    const matchesSearch = searchTerm
+      ? bug.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        bug.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        bug.file?.toLowerCase().includes(searchTerm.toLowerCase())
+      : true
+    return matchesSev && matchesSearch
+  })
 
   return (
     <section className="glass rounded-xl border border-border p-6 transition-colors hover:border-primary/40">
@@ -81,46 +95,89 @@ export function BugDetectionCard({ bugs }: BugDetectionProps) {
           <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-destructive/10 text-destructive ring-1 ring-destructive/20">
             <Bug className="h-4 w-4" />
           </span>
-          <h3 className="text-base font-semibold tracking-tight">Bug Detection</h3>
+          <div>
+            <h3 className="text-base font-semibold tracking-tight">Bug Detection</h3>
+            <p className="text-xs text-muted-foreground">Click a severity bar to filter findings</p>
+          </div>
         </div>
         <span className="font-mono text-2xl font-bold tabular-nums">{total}</span>
       </div>
-      <div className="mt-5 space-y-3">
-        {counts.map((b) => (
-          <div key={b.label}>
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">{b.label}</span>
-              <span className={`font-mono font-semibold ${b.tint}`}>{b.value}</span>
-            </div>
-            <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-secondary">
-              <div
-                className={`h-full rounded-full ${b.bar}`}
-                style={{ width: `${(b.value / max) * 100}%` }}
-              />
-            </div>
-          </div>
-        ))}
+
+      <div className="mt-5 space-y-2.5">
+        {counts.map((b) => {
+          const isSelected = selectedSev === b.severity
+          return (
+            <button
+              key={b.label}
+              type="button"
+              onClick={() => setSelectedSev(isSelected ? null : b.severity)}
+              className={`w-full text-left rounded-lg p-1.5 transition-colors ${
+                isSelected ? 'bg-secondary/80 ring-1 ring-primary/40' : 'hover:bg-secondary/40'
+              }`}
+            >
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-muted-foreground font-medium">{b.label}</span>
+                <span className={`font-mono font-semibold ${b.tint}`}>{b.value}</span>
+              </div>
+              <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-secondary">
+                <div
+                  className={`h-full rounded-full ${b.bar}`}
+                  style={{ width: `${(b.value / max) * 100}%` }}
+                />
+              </div>
+            </button>
+          )
+        })}
       </div>
 
-      {/* Bug details list */}
-      {bugs && bugs.length > 0 && (
-        <div className="mt-5 space-y-2 border-t border-border pt-4">
-          {bugs.slice(0, 5).map((bug, i) => (
-            <div key={i} className="rounded-lg border border-border bg-secondary/30 px-3 py-2.5">
-              <div className="flex items-center gap-2">
-                <span className={`text-xs font-semibold uppercase ${severityConfig[bug.severity]?.tint || 'text-muted-foreground'}`}>
-                  {bug.severity}
-                </span>
-                <span className="text-sm font-medium text-foreground">{bug.title}</span>
-              </div>
-              <p className="mt-1 text-xs text-muted-foreground">{bug.description}</p>
-              {bug.file && (
-                <p className="mt-1 font-mono text-xs text-primary/70">
-                  {bug.file}{bug.line ? `:${bug.line}` : ''}
-                </p>
-              )}
-            </div>
-          ))}
+      {/* Bug details list with search & filter */}
+      {displayBugs.length > 0 && (
+        <div className="mt-5 border-t border-border pt-4">
+          <div className="flex items-center justify-between gap-2 mb-3">
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Filter bugs..."
+              aria-label="Filter bugs"
+              className="h-8 w-full rounded-md border border-border bg-input/60 px-2.5 text-xs text-foreground outline-none placeholder:text-muted-foreground focus:border-primary/60"
+            />
+            {selectedSev && (
+              <button
+                onClick={() => setSelectedSev(null)}
+                className="shrink-0 text-[11px] text-primary hover:underline"
+              >
+                Clear filter
+              </button>
+            )}
+          </div>
+
+          <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
+            {filteredBugs.length === 0 ? (
+              <p className="text-xs text-muted-foreground py-2 text-center">No bugs match filter</p>
+            ) : (
+              filteredBugs.map((bug, i) => (
+                <div key={i} className="rounded-lg border border-border bg-secondary/30 px-3 py-2.5">
+                  <div className="flex items-center gap-2">
+                    <span className={`text-[10px] font-bold uppercase px-1.5 py-0.5 rounded border ${
+                      bug.severity === 'critical' ? 'border-destructive/40 bg-destructive/10 text-destructive' :
+                      bug.severity === 'high' ? 'border-amber-500/40 bg-amber-500/10 text-amber-400' :
+                      'border-primary/40 bg-primary/10 text-primary'
+                    }`}>
+                      {bug.severity}
+                    </span>
+                    <span className="text-xs font-medium text-foreground truncate">{bug.title}</span>
+                  </div>
+                  <p className="mt-1 text-xs text-muted-foreground leading-relaxed">{bug.description}</p>
+                  {bug.file && (
+                    <p className="mt-1 font-mono text-[11px] text-primary/70">
+                      {bug.file}{bug.line ? `:${bug.line}` : ''}
+                    </p>
+                  )}
+                </div>
+              ))
+            )}
+          </div>
         </div>
       )}
     </section>
@@ -147,7 +204,12 @@ const categorySeverityTint: Record<string, string> = {
 }
 
 export function SecurityAnalysisCard({ issues }: SecurityAnalysisProps) {
+  const [selectedCat, setSelectedCat] = useState<string | null>(null)
   const displayIssues = issues ?? []
+
+  const filteredIssues = selectedCat
+    ? displayIssues.filter((i) => i.category === selectedCat)
+    : displayIssues
 
   return (
     <section className="glass rounded-xl border border-border p-6 transition-colors hover:border-primary/40">
@@ -156,34 +218,61 @@ export function SecurityAnalysisCard({ issues }: SecurityAnalysisProps) {
           <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#d29922]/10 text-[#d29922] ring-1 ring-[#d29922]/20">
             <ShieldAlert className="h-4 w-4" />
           </span>
-          <h3 className="text-base font-semibold tracking-tight">Security Analysis</h3>
+          <div>
+            <h3 className="text-base font-semibold tracking-tight">Security Analysis</h3>
+            <p className="text-xs text-muted-foreground">Vulnerability & risk breakdown</p>
+          </div>
         </div>
         <span className="font-mono text-2xl font-bold tabular-nums">{displayIssues.length}</span>
       </div>
-      <div className="mt-5 grid grid-cols-1 gap-3">
-        {displayIssues.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No security issues detected ✓</p>
+
+      {/* Category filter tabs */}
+      {displayIssues.length > 0 && (
+        <div className="mt-4 flex gap-1 rounded-md bg-secondary/50 p-1 text-xs">
+          {['all', 'vulnerability', 'dependency_risk', 'secret'].map((cat) => {
+            const isAll = cat === 'all'
+            const active = isAll ? !selectedCat : selectedCat === cat
+            const label = isAll ? 'All' : cat === 'vulnerability' ? 'Vulns' : cat === 'dependency_risk' ? 'Deps' : 'Secrets'
+            return (
+              <button
+                key={cat}
+                type="button"
+                onClick={() => setSelectedCat(isAll ? null : cat)}
+                className={`flex-1 rounded py-1 font-medium transition-colors ${
+                  active ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                {label}
+              </button>
+            )
+          })}
+        </div>
+      )}
+
+      <div className="mt-4 space-y-2.5 max-h-72 overflow-y-auto pr-1">
+        {filteredIssues.length === 0 ? (
+          <p className="text-sm text-muted-foreground py-2">No security issues found ✓</p>
         ) : (
-          displayIssues.map((issue, i) => {
+          filteredIssues.map((issue, i) => {
             const Icon = categoryIcons[issue.category] || ShieldAlert
             const tint = categorySeverityTint[issue.severity] || 'text-[#d29922]'
             return (
               <div
                 key={i}
-                className="rounded-lg border border-border bg-secondary/40 px-4 py-3"
+                className="rounded-lg border border-border bg-secondary/40 px-3.5 py-3"
               >
-                <div className="flex items-center justify-between">
-                  <span className="flex items-center gap-2.5 text-sm text-muted-foreground">
-                    <Icon className={`h-4 w-4 ${tint}`} />
+                <div className="flex items-center justify-between gap-2">
+                  <span className="flex items-center gap-2 text-xs font-medium text-foreground truncate">
+                    <Icon className={`h-4 w-4 shrink-0 ${tint}`} />
                     {issue.title}
                   </span>
-                  <span className={`text-xs font-semibold uppercase ${tint}`}>
+                  <span className={`text-[10px] font-bold uppercase shrink-0 ${tint}`}>
                     {issue.severity}
                   </span>
                 </div>
-                <p className="mt-1.5 text-xs text-muted-foreground">{issue.description}</p>
+                <p className="mt-1 text-xs text-muted-foreground leading-relaxed">{issue.description}</p>
                 {issue.file && (
-                  <p className="mt-1 font-mono text-xs text-primary/70">{issue.file}</p>
+                  <p className="mt-1 font-mono text-[11px] text-primary/70">{issue.file}</p>
                 )}
               </div>
             )
@@ -211,26 +300,32 @@ export function CodeSmellsCard({ smells }: CodeSmellsProps) {
           <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary ring-1 ring-primary/20">
             <Sparkles className="h-4 w-4" />
           </span>
-          <h3 className="text-base font-semibold tracking-tight">Code Smells</h3>
+          <div>
+            <h3 className="text-base font-semibold tracking-tight">Code Smells</h3>
+            <p className="text-xs text-muted-foreground">Maintainability & refactoring indicators</p>
+          </div>
         </div>
         <span className="font-mono text-2xl font-bold tabular-nums">{total}</span>
       </div>
-      <ul className="mt-5 space-y-2.5">
+      <ul className="mt-5 space-y-2.5 max-h-72 overflow-y-auto pr-1">
         {displaySmells.length === 0 ? (
-          <li className="text-sm text-muted-foreground">No code smells detected ✓</li>
+          <li className="text-sm text-muted-foreground py-2">No code smells detected ✓</li>
         ) : (
           displaySmells.map((s, i) => (
             <li
               key={i}
-              className="flex items-center justify-between text-sm"
+              className="rounded-lg border border-border bg-secondary/30 p-3 text-xs"
             >
-              <div>
+              <div className="flex items-center justify-between gap-2">
                 <span className="text-foreground font-medium">{s.title}</span>
-                <p className="text-xs text-muted-foreground mt-0.5">{s.description}</p>
+                <span className="rounded-md bg-secondary px-2 py-0.5 font-mono text-[11px] font-semibold text-primary shrink-0">
+                  {s.count} {s.count === 1 ? 'instance' : 'instances'}
+                </span>
               </div>
-              <span className="rounded-md bg-secondary px-2 py-0.5 font-mono text-xs font-semibold text-foreground shrink-0 ml-3">
-                {s.count}
-              </span>
+              <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{s.description}</p>
+              {s.file && (
+                <p className="mt-1 font-mono text-[11px] text-primary/70">{s.file}</p>
+              )}
             </li>
           ))
         )}

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { Sparkles, CheckCircle2, AlertTriangle, XCircle, ShieldCheck, Wrench, Bug } from 'lucide-react'
+import { loadHistory } from '@/lib/api'
 
 interface QualityScoreCardProps {
   score?: number | string
@@ -9,6 +10,7 @@ interface QualityScoreCardProps {
 
 export function QualityScoreCard({ score = 85 }: QualityScoreCardProps) {
   const [value, setValue] = useState(0)
+  const [delta, setDelta] = useState<number | null>(null)
 
   // Safe numerical coercion (prevents NaN from LLM output)
   const rawScore = typeof score === 'number'
@@ -16,6 +18,17 @@ export function QualityScoreCard({ score = 85 }: QualityScoreCardProps) {
     : parseInt(String(score || 85).replace(/\D/g, ''), 10) || 85
 
   const targetScore = Math.min(100, Math.max(0, rawScore))
+
+  useEffect(() => {
+    // Check history for score comparison
+    const history = loadHistory()
+    if (history.length > 1) {
+      const prev = history[1]?.quality_score
+      if (typeof prev === 'number') {
+        setDelta(targetScore - prev)
+      }
+    }
+  }, [targetScore])
 
   useEffect(() => {
     let animationFrameId: number
@@ -98,16 +111,25 @@ export function QualityScoreCard({ score = 85 }: QualityScoreCardProps) {
         >
           Overall Code Quality
         </h2>
-        <span
-          className="inline-flex items-center rounded-md px-2 py-0.5 font-mono text-xs font-bold ring-1"
-          style={{
-            backgroundColor: `${colorHex}18`,
-            color: colorHex,
-            borderColor: `${colorHex}40`,
-          }}
-        >
-          Grade {grade}
-        </span>
+        <div className="flex items-center gap-1.5">
+          {delta !== null && (
+            <span className={`text-[11px] font-mono font-semibold px-2 py-0.5 rounded ${
+              delta > 0 ? 'bg-emerald-500/10 text-emerald-400' : delta < 0 ? 'bg-destructive/10 text-destructive' : 'bg-secondary text-muted-foreground'
+            }`}>
+              {delta > 0 ? `+${delta}` : delta} vs prev
+            </span>
+          )}
+          <span
+            className="inline-flex items-center rounded-md px-2 py-0.5 font-mono text-xs font-bold ring-1"
+            style={{
+              backgroundColor: `${colorHex}18`,
+              color: colorHex,
+              borderColor: `${colorHex}40`,
+            }}
+          >
+            Grade {grade}
+          </span>
+        </div>
       </div>
 
       {/* SVG Arc Gauge */}
