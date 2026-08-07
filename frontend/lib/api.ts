@@ -66,7 +66,8 @@ export interface TestSuggestion {
 
 export interface AnalysisResult {
   id: string;
-  repo_meta: RepoMeta;
+  repo_meta?: RepoMeta | null;
+  source_type?: 'github' | 'zip' | 'snippet';
   quality_score: number;
   summary: string;
   tags: string[];
@@ -75,6 +76,7 @@ export interface AnalysisResult {
   code_smells: CodeSmellItem[];
   performance_suggestions: PerformanceSuggestion[];
   test_suggestions: TestSuggestion[];
+  suggested_commit_messages?: string[];
   documentation_snippet: string;
   analyzed_at: string;
 }
@@ -82,17 +84,27 @@ export interface AnalysisResult {
 // ── Helper for resilient fetching (tries localhost then 127.0.0.1) ───
 
 async function fetchResilient(path: string, options?: RequestInit): Promise<Response> {
+  let primaryResponse: Response | null = null;
   try {
-    const res = await fetch(`${PRIMARY_API_URL}${path}`, options);
-    if (res.ok) return res;
-  } catch {
-    // Try fallback host
+    primaryResponse = await fetch(`${PRIMARY_API_URL}${path}`, options);
+    if (primaryResponse.ok) return primaryResponse;
+    if (primaryResponse.status < 500) {
+      const errJson = await primaryResponse.json().catch(() => null);
+      const message = errJson?.detail || `API error (${primaryResponse.status})`;
+      throw new Error(message);
+    }
+  } catch (err) {
+    if (err instanceof Error && !err.message.includes('fetch')) {
+      throw err;
+    }
+    // Try fallback host if primary network connection failed
   }
 
   const resFallback = await fetch(`${FALLBACK_API_URL}${path}`, options);
   if (!resFallback.ok) {
-    const text = await resFallback.text().catch(() => '');
-    throw new Error(`API call to ${path} failed (${resFallback.status}): ${text}`);
+    const errJson = await resFallback.json().catch(() => null);
+    const text = errJson?.detail || (await resFallback.text().catch(() => ''));
+    throw new Error(text || `API call to ${path} failed (${resFallback.status})`);
   }
   return resFallback;
 }
@@ -134,6 +146,51 @@ export async function analyzeRepository(githubUrl: string): Promise<AnalysisResu
     return await res.json();
   } catch (error) {
     console.error('Repository analysis request failed:', error);
+    throw error;
+  }
+}
+
+/**
+ * Upload a .zip file to the backend for AI analysis.
+ */
+export async function analyzeZip(file: File): Promise<AnalysisResult> {
+  try {
+    const formData = new FormData();
+    formData.append('file', file);
+    const res = await fetchResilient('/analyze/zip', {
+      method: 'POST',
+      body: formData,
+    });
+    return await res.json();
+  } catch (error) {
+    console.error('Zip analysis request failed:', error);
+    throw error;
+  }
+}
+
+/**
+ * Submit a code snippet to the backend for AI analysis.
+ */
+export async function analyzeSnippet(
+  code: string,
+  filename?: string,
+  language?: string,
+): Promise<AnalysisResult> {
+  try {
+    const res = await fetchResilient('/analyze/snippet', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        code,
+        filename: filename || 'snippet',
+        language: language || '',
+      }),
+    });
+    return await res.json();
+  } catch (error) {
+    console.error('Snippet analysis request failed:', error);
     throw error;
   }
 }

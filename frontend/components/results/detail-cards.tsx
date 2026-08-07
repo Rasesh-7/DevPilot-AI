@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import {
   Bug,
   ShieldAlert,
@@ -6,8 +7,12 @@ import {
   KeyRound,
   PackageX,
   ShieldX,
+  FlaskConical,
+  GitCommitHorizontal,
+  Copy,
+  Check,
 } from 'lucide-react'
-import type { BugItem, SecurityItem, CodeSmellItem, PerformanceSuggestion } from '@/lib/api'
+import type { BugItem, SecurityItem, CodeSmellItem, PerformanceSuggestion, TestSuggestion } from '@/lib/api'
 
 /* ---------------- AI Summary ---------------- */
 
@@ -271,6 +276,147 @@ export function PerformanceCard({ suggestions }: PerformanceProps) {
           ))
         )}
       </ul>
+    </section>
+  )
+}
+
+/* ---------------- Unit Test Suggestions ---------------- */
+
+interface TestSuggestionsProps {
+  suggestions?: TestSuggestion[]
+}
+
+export function TestSuggestionsCard({ suggestions }: TestSuggestionsProps) {
+  const displaySuggestions = suggestions ?? []
+  const [copiedIndex, setCopiedIndex] = useState<number | null>(null)
+
+  const handleCopy = async (text: string, index: number) => {
+    try {
+      await navigator.clipboard.writeText(text)
+      setCopiedIndex(index)
+      setTimeout(() => setCopiedIndex(null), 2000)
+    } catch {
+      // Fallback
+    }
+  }
+
+  return (
+    <section className="glass rounded-xl border border-border p-6 transition-colors hover:border-primary/40">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-400 ring-1 ring-emerald-500/20">
+            <FlaskConical className="h-4 w-4" />
+          </span>
+          <h3 className="text-base font-semibold tracking-tight">Unit Test Suggestions</h3>
+        </div>
+        <span className="font-mono text-2xl font-bold tabular-nums">{displaySuggestions.length}</span>
+      </div>
+      <div className="mt-5 space-y-3">
+        {displaySuggestions.length === 0 ? (
+          <p className="text-sm text-muted-foreground">Test coverage recommendations complete ✓</p>
+        ) : (
+          displaySuggestions.map((t, i) => (
+            <div key={i} className="rounded-lg border border-border bg-secondary/40 px-4 py-3">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <span className="font-mono text-xs font-semibold text-primary">
+                    {t.function_name ? `${t.function_name}()` : 'Target Routine'}
+                  </span>
+                  {t.file && <span className="font-mono text-[11px] text-muted-foreground">({t.file})</span>}
+                </div>
+                <button
+                  onClick={() => handleCopy(`${t.function_name || 'test'}: ${t.suggestion}`, i)}
+                  className="inline-flex shrink-0 items-center gap-1 rounded border border-border bg-secondary px-2 py-0.5 text-[11px] font-sans font-medium text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
+                >
+                  {copiedIndex === i ? (
+                    <>
+                      <Check className="h-3 w-3 text-emerald-400" />
+                      <span className="text-emerald-400">Copied</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="h-3 w-3 text-muted-foreground" />
+                      <span>Copy</span>
+                    </>
+                  )}
+                </button>
+              </div>
+              <p className="mt-1.5 text-xs text-muted-foreground leading-relaxed">{t.suggestion}</p>
+            </div>
+          ))
+        )}
+      </div>
+    </section>
+  )
+}
+
+/* ---------------- Commit Messages Generator ---------------- */
+
+interface CommitMessagesProps {
+  messages?: string[]
+}
+
+export function CommitMessagesCard({ messages }: CommitMessagesProps) {
+  const displayMessages = messages && messages.length > 0
+    ? messages
+    : [
+        'feat(core): refine primary handling routines and improve validation',
+        'fix(security): sanitize user-controlled parameters',
+        'docs: add developer guide and setup instructions',
+      ]
+
+  const [copiedIndex, setCopiedIndex] = useState<number | null>(null)
+
+  const handleCopy = async (text: string, index: number) => {
+    try {
+      await navigator.clipboard.writeText(text)
+      setCopiedIndex(index)
+      setTimeout(() => setCopiedIndex(null), 2000)
+    } catch {
+      // Fallback
+    }
+  }
+
+  return (
+    <section className="glass rounded-xl border border-border p-6 transition-colors hover:border-primary/40">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary ring-1 ring-primary/20">
+            <GitCommitHorizontal className="h-4 w-4" />
+          </span>
+          <div>
+            <h3 className="text-base font-semibold tracking-tight">Suggested Commit Messages</h3>
+            <p className="text-xs text-muted-foreground">Conventional commit messages ready to copy for your next PR</p>
+          </div>
+        </div>
+        <span className="font-mono text-2xl font-bold tabular-nums">{displayMessages.length}</span>
+      </div>
+      <div className="mt-5 space-y-2.5">
+        {displayMessages.map((msg, i) => (
+          <div
+            key={i}
+            className="flex items-center justify-between gap-3 rounded-lg border border-border bg-secondary/40 px-3.5 py-2.5 font-mono text-xs text-foreground transition-colors hover:border-primary/30"
+          >
+            <span className="truncate">{msg}</span>
+            <button
+              onClick={() => handleCopy(msg, i)}
+              className="inline-flex shrink-0 items-center gap-1 rounded border border-border bg-secondary px-2 py-1 text-[11px] font-sans font-medium text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
+            >
+              {copiedIndex === i ? (
+                <>
+                  <Check className="h-3 w-3 text-emerald-400" />
+                  <span className="text-emerald-400">Copied</span>
+                </>
+              ) : (
+                <>
+                  <Copy className="h-3 w-3 text-muted-foreground" />
+                  <span>Copy</span>
+                </>
+              )}
+            </button>
+          </div>
+        ))}
+      </div>
     </section>
   )
 }

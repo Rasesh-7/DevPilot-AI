@@ -7,6 +7,13 @@ import { Bell, Menu, Search } from 'lucide-react'
 export function DashboardTopbar({ onMenu }: { onMenu: () => void }) {
   const router = useRouter()
   const [query, setQuery] = useState('')
+  const [showNotifications, setShowNotifications] = useState(false)
+  const [unreadCount, setUnreadCount] = useState(2)
+
+  const notifications = [
+    { id: 1, title: 'AI Engine Active', desc: 'Google Gemini 3.5 Flash is analyzing code in real-time.', time: 'Just now' },
+    { id: 2, title: 'Upload Support Added', desc: 'You can now upload .zip files or paste code snippets directly.', time: '5m ago' },
+  ]
 
   function handleSearch(e: React.FormEvent) {
     e.preventDefault()
@@ -45,15 +52,48 @@ export function DashboardTopbar({ onMenu }: { onMenu: () => void }) {
         </form>
 
         <div className="ml-auto flex items-center gap-2">
-          <button
-            type="button"
-            aria-label="Notifications"
-            onClick={() => alert('All notifications are up to date! DevPilot AI active.')}
-            className="relative inline-flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
-          >
-            <Bell className="h-5 w-5" />
-            <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-primary ring-2 ring-background" />
-          </button>
+          {/* Notifications Dropdown */}
+          <div className="relative">
+            <button
+              type="button"
+              aria-label="Notifications"
+              onClick={() => {
+                setShowNotifications(!showNotifications)
+                setUnreadCount(0)
+              }}
+              className="relative inline-flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+            >
+              <Bell className="h-5 w-5" />
+              {unreadCount > 0 && (
+                <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-primary ring-2 ring-background" />
+              )}
+            </button>
+
+            {showNotifications && (
+              <div className="glass absolute right-0 mt-2 w-80 rounded-xl border border-border p-4 shadow-xl z-50 animate-fade-up">
+                <div className="flex items-center justify-between border-b border-border pb-3">
+                  <h4 className="text-xs font-semibold uppercase tracking-wider text-foreground">Notifications</h4>
+                  <button
+                    onClick={() => setShowNotifications(false)}
+                    className="text-xs text-muted-foreground hover:text-foreground"
+                  >
+                    Close
+                  </button>
+                </div>
+                <div className="mt-3 space-y-3">
+                  {notifications.map((n) => (
+                    <div key={n.id} className="rounded-lg border border-border/60 bg-secondary/30 p-2.5">
+                      <div className="flex items-center justify-between text-xs font-medium text-foreground">
+                        <span>{n.title}</span>
+                        <span className="text-[10px] text-muted-foreground">{n.time}</span>
+                      </div>
+                      <p className="mt-1 text-xs text-muted-foreground leading-relaxed">{n.desc}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
 
           <button
             type="button"

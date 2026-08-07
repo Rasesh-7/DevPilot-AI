@@ -5,13 +5,48 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { Sparkles, Check } from 'lucide-react'
 import { ScanIllustration } from '@/components/analyze/scan-illustration'
 import { AnalysisTerminal } from '@/components/analyze/analysis-terminal'
-import { checkBackendHealth, analyzeRepository, saveAnalysis } from '@/lib/api'
+import {
+  checkBackendHealth,
+  analyzeRepository,
+  analyzeZip,
+  analyzeSnippet,
+  saveAnalysis,
+} from '@/lib/api'
 import type { AnalysisResult } from '@/lib/api'
 
 const STEPS = [
   'Connecting to Backend & GitHub...',
   'Cloning Repository...',
   'Reading Files...',
+  'Parsing Source Code...',
+  'Running AI Code Review...',
+  'Detecting Bugs...',
+  'Detecting Security Vulnerabilities...',
+  'Finding Code Smells...',
+  'Calculating Code Quality Score...',
+  'Generating Documentation...',
+  'Creating Unit Tests...',
+  'Preparing Final Report...',
+] as const
+
+const ZIP_STEPS = [
+  'Connecting to Backend...',
+  'Extracting Zip Archive...',
+  'Reading Files...',
+  'Parsing Source Code...',
+  'Running AI Code Review...',
+  'Detecting Bugs...',
+  'Detecting Security Vulnerabilities...',
+  'Finding Code Smells...',
+  'Calculating Code Quality Score...',
+  'Generating Documentation...',
+  'Creating Unit Tests...',
+  'Preparing Final Report...',
+] as const
+
+const SNIPPET_STEPS = [
+  'Connecting to Backend...',
+  'Analyzing Code Snippet...',
   'Parsing Source Code...',
   'Running AI Code Review...',
   'Detecting Bugs...',
@@ -32,6 +67,7 @@ type TerminalLine = {
 export function AnalysisLoader() {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const mode = (searchParams.get('mode') || 'github') as 'github' | 'zip' | 'snippet'
   const repoUrl = searchParams.get('url') || 'https://github.com/acme/payments-api'
   const [progress, setProgress] = useState(0)
   const [stepIndex, setStepIndex] = useState(0)
@@ -40,6 +76,8 @@ export function AnalysisLoader() {
   const doneRef = useRef(false)
   const analysisRef = useRef<AnalysisResult | null>(null)
   const backendDoneRef = useRef(false)
+
+  const currentSteps = mode === 'zip' ? ZIP_STEPS : mode === 'snippet' ? SNIPPET_STEPS : STEPS
 
   // Helper to push a new terminal line
   const pushLine = (text: string, tone: TerminalLine['tone'] = 'muted') => {
@@ -70,20 +108,77 @@ export function AnalysisLoader() {
         )
       }
 
-      // Step 2: Full analysis
-      pushLine(`→ Sending ${repoUrl} to backend for analysis...`, 'primary')
+      // Step 2: Run the analysis based on mode
       try {
-        const result = await analyzeRepository(repoUrl)
-        if (cancelled) return
+        let result: AnalysisResult
+
+        if (mode === 'zip') {
+          // Retrieve zip from sessionStorage
+          const base64 = sessionStorage.getItem('devpilot_zip_file')
+          const filename = sessionStorage.getItem('devpilot_zip_filename') || 'upload.zip'
+          sessionStorage.removeItem('devpilot_zip_file')
+          sessionStorage.removeItem('devpilot_zip_filename')
+
+          if (!base64) {
+            pushLine('✗ No zip file found — please try uploading again', 'error')
+            backendDoneRef.current = true
+            return
+          }
+
+          pushLine(`→ Uploading ${filename} for analysis...`, 'primary')
+          // Convert base64 back to File
+          const byteString = atob(base64)
+          const ab = new ArrayBuffer(byteString.length)
+          const ia = new Uint8Array(ab)
+          for (let i = 0; i < byteString.length; i++) {
+            ia[i] = byteString.charCodeAt(i)
+          }
+          const file = new File([ab], filename, { type: 'application/zip' })
+
+          result = await analyzeZip(file)
+          if (cancelled) return
+          pushLine(`✓ Zip archive analyzed: ${filename}`, 'success')
+
+        } else if (mode === 'snippet') {
+          // Retrieve snippet from sessionStorage
+          const snippetCode = sessionStorage.getItem('devpilot_snippet_code')
+          const snippetFilename = sessionStorage.getItem('devpilot_snippet_filename') || 'snippet'
+          const snippetLanguage = sessionStorage.getItem('devpilot_snippet_language') || ''
+          sessionStorage.removeItem('devpilot_snippet_code')
+          sessionStorage.removeItem('devpilot_snippet_filename')
+          sessionStorage.removeItem('devpilot_snippet_language')
+
+          if (!snippetCode) {
+            pushLine('✗ No code snippet found — please try again', 'error')
+            backendDoneRef.current = true
+            return
+          }
+
+          const langLabel = snippetLanguage || 'auto-detected'
+          pushLine(`→ Analyzing ${snippetFilename} (${langLabel})...`, 'primary')
+          result = await analyzeSnippet(snippetCode, snippetFilename, snippetLanguage)
+          if (cancelled) return
+          pushLine(`✓ Snippet analyzed: ${snippetFilename}`, 'success')
+
+        } else {
+          // GitHub mode (default)
+          pushLine(`→ Sending ${repoUrl} to backend for analysis...`, 'primary')
+          result = await analyzeRepository(repoUrl)
+          if (cancelled) return
+        }
 
         analysisRef.current = result
         saveAnalysis(result)
 
         // Log real data into the terminal
         const meta = result.repo_meta
-        pushLine(`✓ Repository: ${meta.full_name || `${meta.owner}/${meta.repo}`}`, 'success')
-        pushLine(`  Language: ${meta.language} · ${meta.total_files} files · ${meta.lines_of_code.toLocaleString()} LOC`, 'muted')
-        pushLine(`  ★ ${meta.stars} stars · ${meta.forks} forks`, 'muted')
+        if (meta) {
+          pushLine(`✓ Repository: ${meta.full_name || `${meta.owner}/${meta.repo}`}`, 'success')
+          pushLine(`  Language: ${meta.language} · ${meta.total_files} files · ${meta.lines_of_code.toLocaleString()} LOC`, 'muted')
+          if (meta.stars > 0) {
+            pushLine(`  ★ ${meta.stars} stars · ${meta.forks} forks`, 'muted')
+          }
+        }
 
         if (result.bugs.length > 0) {
           const critical = result.bugs.filter(b => b.severity === 'critical').length
@@ -115,7 +210,7 @@ export function AnalysisLoader() {
 
     runAnalysis()
     return () => { cancelled = true }
-  }, [repoUrl])
+  }, [repoUrl, mode])
 
   // ── Drive the progress bar ────────────────────────────────────
   useEffect(() => {
@@ -140,7 +235,7 @@ export function AnalysisLoader() {
 
   // ── Derive step index from progress ───────────────────────────
   useEffect(() => {
-    const index = Math.min(STEPS.length - 1, Math.floor((progress / 100) * STEPS.length))
+    const index = Math.min(currentSteps.length - 1, Math.floor((progress / 100) * currentSteps.length))
     setStepIndex(index)
 
     // Redirect when complete
@@ -156,10 +251,15 @@ export function AnalysisLoader() {
       }, 1100)
       return () => clearTimeout(timeout)
     }
-  }, [progress, router])
+  }, [progress, router, currentSteps.length])
 
   const rounded = Math.round(progress)
   const isComplete = rounded >= 100
+
+  const modeLabel =
+    mode === 'zip' ? 'Zip Archive Analysis' :
+    mode === 'snippet' ? 'Code Snippet Analysis' :
+    'Repository Analysis'
 
   return (
     <main className="relative min-h-svh overflow-hidden">
@@ -189,7 +289,7 @@ export function AnalysisLoader() {
       <div className="mx-auto flex min-h-svh max-w-6xl flex-col justify-center px-4 py-12 md:px-6">
         <div className="mx-auto mb-8 flex items-center gap-2 text-sm text-muted-foreground">
           <Sparkles className="h-4 w-4 text-primary" />
-          <span className="font-medium">DevPilot AI · Repository Analysis</span>
+          <span className="font-medium">DevPilot AI · {modeLabel}</span>
         </div>
 
         <div className="grid items-stretch gap-6 lg:grid-cols-2">
@@ -201,7 +301,7 @@ export function AnalysisLoader() {
             <ScanIllustration />
 
             <h1 className="mt-8 text-balance text-2xl font-bold tracking-tight md:text-3xl">
-              {isComplete ? 'Analysis Complete' : 'Analyzing Repository'}
+              {isComplete ? 'Analysis Complete' : 'Analyzing Code'}
             </h1>
 
             {/* current step */}
@@ -216,7 +316,7 @@ export function AnalysisLoader() {
                 </>
               ) : (
                 <span className="animate-fade-up" key={stepIndex}>
-                  {STEPS[stepIndex]}
+                  {currentSteps[stepIndex]}
                 </span>
               )}
             </div>
@@ -244,7 +344,7 @@ export function AnalysisLoader() {
               </div>
               <div className="mt-2 flex justify-between font-mono text-xs text-muted-foreground">
                 <span>
-                  Step {Math.min(stepIndex + 1, STEPS.length)} of {STEPS.length}
+                  Step {Math.min(stepIndex + 1, currentSteps.length)} of {currentSteps.length}
                 </span>
                 <span>{isComplete ? 'Done' : 'Working...'}</span>
               </div>
