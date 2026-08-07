@@ -10,14 +10,14 @@ export function DashboardTopbar({ onMenu }: { onMenu: () => void }) {
 
   function handleSearch(e: React.FormEvent) {
     e.preventDefault()
-    if (!query.trim()) return
-    // If it looks like a GitHub URL, start analysis directly
-    if (query.includes('github.com/')) {
-      router.push(`/analyze?url=${encodeURIComponent(query.trim())}`)
-    } else {
-      // Default to analyzing a GitHub repo with the query as owner/repo
-      router.push(`/analyze?url=${encodeURIComponent(`https://github.com/${query.trim()}`)}`)
+    const trimmed = query.trim()
+    if (!trimmed) return
+    let targetUrl = trimmed
+    if (!trimmed.startsWith('http://') && !trimmed.startsWith('https://')) {
+      const cleanPath = trimmed.replace(/^github\.com\//, '').replace(/^\/+|\/+$/g, '')
+      targetUrl = `https://github.com/${cleanPath}`
     }
+    router.push(`/analyze?url=${encodeURIComponent(targetUrl)}`)
   }
 
   return (
