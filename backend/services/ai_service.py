@@ -8,28 +8,33 @@ from __future__ import annotations
 import json
 import re
 import hashlib
-from typing import Any
+from typing import Any, Dict, List, Optional
 
 from utils.helpers import get_env, is_code_file
+
+try:
+    import google.generativeai as genai  # type: ignore
+    HAS_GEMINI = True
+except ImportError:
+    genai = None
+    HAS_GEMINI = False
 
 
 async def run_ai_analysis(
     prompt: str,
-    meta: dict[str, Any] | None = None,
-    stats: dict[str, Any] | None = None,
-    tree: list[dict[str, Any]] | None = None,
-    code_files: dict[str, str] | None = None,
-) -> dict[str, Any]:
+    meta: Optional[Dict[str, Any]] = None,
+    stats: Optional[Dict[str, Any]] = None,
+    tree: Optional[List[Dict[str, Any]]] = None,
+    code_files: Optional[Dict[str, str]] = None,
+) -> Dict[str, Any]:
     """
     Send the analysis prompt to Gemini and parse the JSON response.
     If GEMINI_API_KEY is set, uses live Gemini AI across supported models.
     Otherwise, generates a dynamic, repository-specific analysis based on real file paths.
     """
     api_key = get_env("GEMINI_API_KEY")
-    if api_key:
-        import google.generativeai as genai
-
-        genai.configure(api_key=api_key)
+    if api_key and HAS_GEMINI and genai is not None:
+        genai.configure(api_key=api_key)  # type: ignore
 
         candidate_models = [
             "gemini-flash-latest",
@@ -40,7 +45,7 @@ async def run_ai_analysis(
 
         for model_name in candidate_models:
             try:
-                model = genai.GenerativeModel(model_name)
+                model = genai.GenerativeModel(model_name)  # type: ignore
                 response = model.generate_content(prompt)
                 text = response.text.strip()
 
