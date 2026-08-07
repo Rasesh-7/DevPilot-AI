@@ -1,3 +1,6 @@
+'use client'
+
+import { useRouter } from 'next/navigation'
 import { CheckCircle2, ArrowRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
@@ -14,6 +17,8 @@ const points = [
 ]
 
 export function ShowcaseSection() {
+  const router = useRouter()
+
   return (
     <section id="dashboard" className="scroll-mt-20 py-20 md:py-28">
       <div className="mx-auto max-w-6xl px-4 md:px-6">
@@ -38,8 +43,11 @@ export function ShowcaseSection() {
               ))}
             </ul>
 
-            <Button className="group mt-8 gap-2 bg-primary text-primary-foreground hover:bg-primary/90">
-              Analyze Repository
+            <Button
+              onClick={() => router.push('/dashboard')}
+              className="group mt-8 gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
+            >
+              Go to Dashboard
               <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
             </Button>
           </div>

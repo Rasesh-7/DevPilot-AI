@@ -1,15 +1,40 @@
-import { Code2, FileCode, GitBranch, GitCommitHorizontal, User } from 'lucide-react'
+import { Code2, FileCode, GitBranch, GitCommitHorizontal, User, Star } from 'lucide-react'
 import { GithubIcon } from '@/components/brand-icons'
 
-const meta = [
-  { label: 'Owner', value: 'acme-labs', icon: User },
-  { label: 'Language', value: 'TypeScript', icon: Code2 },
-  { label: 'Total Files', value: '324', icon: FileCode },
-  { label: 'Branch', value: 'main', icon: GitBranch },
-  { label: 'Last Commit', value: '2h ago', icon: GitCommitHorizontal },
-]
+interface RepoHeaderProps {
+  owner?: string
+  repo?: string
+  fullName?: string
+  description?: string
+  language?: string
+  totalFiles?: number
+  defaultBranch?: string
+  lastPushed?: string
+  stars?: number
+}
 
-export function RepoHeader() {
+export function RepoHeader({
+  owner = 'acme-labs',
+  repo = 'payments-api',
+  fullName,
+  description,
+  language = 'TypeScript',
+  totalFiles = 324,
+  defaultBranch = 'main',
+  lastPushed = '2h ago',
+  stars = 0,
+}: RepoHeaderProps) {
+  const displayRepoName = repo || 'repository'
+  const displayFullName = fullName || `github.com/${owner}/${displayRepoName}`
+
+  const meta = [
+    { label: 'Owner', value: owner, icon: User },
+    { label: 'Language', value: language, icon: Code2 },
+    { label: 'Total Files', value: totalFiles.toLocaleString(), icon: FileCode },
+    { label: 'Branch', value: defaultBranch, icon: GitBranch },
+    { label: 'Stars', value: stars.toString(), icon: Star },
+  ]
+
   return (
     <header className="glass animate-fade-up rounded-xl border border-border p-6 md:p-7">
       <div className="flex flex-wrap items-start justify-between gap-4">
@@ -20,15 +45,20 @@ export function RepoHeader() {
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-xl font-bold tracking-tight md:text-2xl">
-                payments-api
+                {displayRepoName}
               </h1>
               <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary ring-1 ring-primary/20">
                 Analyzed
               </span>
             </div>
             <p className="mt-1 font-mono text-sm text-muted-foreground">
-              github.com/acme-labs/payments-api
+              {displayFullName}
             </p>
+            {description && (
+              <p className="mt-2 text-sm text-muted-foreground max-w-2xl">
+                {description}
+              </p>
+            )}
           </div>
         </div>
       </div>

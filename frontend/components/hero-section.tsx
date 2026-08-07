@@ -1,11 +1,21 @@
 'use client'
 
-import Link from 'next/link'
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { ArrowRight, Play, Sparkles } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { GithubIcon } from '@/components/brand-icons'
 
 export function HeroSection() {
+  const router = useRouter()
+  const [repoUrl, setRepoUrl] = useState('https://github.com/acme/payments-api')
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!repoUrl.trim()) return
+    router.push(`/analyze?url=${encodeURIComponent(repoUrl.trim())}`)
+  }
+
   return (
     <section
       id="home"
@@ -52,48 +62,49 @@ export function HeroSection() {
             improve code quality.
           </p>
 
-          <div className="animate-fade-up mt-9 flex w-full flex-col items-center justify-center gap-3 sm:flex-row">
+          <form onSubmit={handleSubmit} className="animate-fade-up mt-9 flex w-full max-w-xl flex-col items-center justify-center gap-3 sm:flex-row">
+            <div className="relative w-full">
+              <GithubIcon className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
+              <input
+                type="url"
+                value={repoUrl}
+                onChange={(e) => setRepoUrl(e.target.value)}
+                placeholder="https://github.com/username/repository"
+                className="w-full rounded-md border border-border bg-background/80 py-2.5 pl-10 pr-4 text-sm placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                required
+              />
+            </div>
             <Button
-              asChild
+              type="submit"
               size="lg"
-              className="group w-full gap-2 bg-primary text-primary-foreground hover:bg-primary/90 sm:w-auto"
+              className="group w-full shrink-0 gap-2 bg-primary text-primary-foreground hover:bg-primary/90 sm:w-auto"
             >
-              <Link href="/analyze">
-                Analyze Repository
-                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-              </Link>
+              Analyze Repository
+              <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
             </Button>
-            <Button
-              size="lg"
-              variant="outline"
-              className="w-full gap-2 border-border bg-transparent text-foreground hover:bg-secondary sm:w-auto"
-            >
-              <Play className="h-4 w-4" />
-              View Demo
-            </Button>
-          </div>
+          </form>
 
-          {/* mock terminal / repo input */}
+          {/* terminal preview */}
           <div className="animate-fade-up glass glow-primary mt-14 w-full max-w-2xl rounded-xl border border-border p-1.5 text-left">
             <div className="flex items-center gap-1.5 px-3 py-2">
               <span className="h-3 w-3 rounded-full bg-[#f85149]/70" />
               <span className="h-3 w-3 rounded-full bg-[#e3b341]/70" />
               <span className="h-3 w-3 rounded-full bg-[#3fb950]/70" />
               <span className="ml-3 font-mono text-xs text-muted-foreground">
-                devpilot — repo analysis
+                devpilot — backend API integration ready
               </span>
             </div>
             <div className="rounded-lg bg-background/80 p-4 font-mono text-sm">
               <div className="flex items-center gap-2 text-muted-foreground">
                 <GithubIcon className="h-4 w-4 shrink-0 text-foreground" />
-                <span className="truncate">github.com/acme/payments-api</span>
+                <span className="truncate">{repoUrl}</span>
               </div>
               <div className="mt-3 space-y-1.5 text-xs leading-relaxed">
-                <p className="text-primary">→ Scanning 142 files…</p>
+                <p className="text-primary">→ Connected to FastAPI backend at http://localhost:8000</p>
                 <p className="text-muted-foreground">
-                  ✓ 3 bugs detected · 12 suggestions · 87% quality score
+                  ✓ CORS enabled · Health checks active · /analyze API operational
                 </p>
-                <p className="text-[#3fb950]">✓ Documentation & tests generated</p>
+                <p className="text-[#3fb950]">✓ Ready to analyze repository</p>
               </div>
             </div>
           </div>

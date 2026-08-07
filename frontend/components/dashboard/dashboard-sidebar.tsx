@@ -1,5 +1,7 @@
 'use client'
 
+import { usePathname } from 'next/navigation'
+import Link from 'next/link'
 import {
   LayoutDashboard,
   ScanSearch,
@@ -15,15 +17,13 @@ import {
 type NavItem = {
   label: string
   icon: LucideIcon
+  href: string
 }
 
 const navItems: NavItem[] = [
-  { label: 'Dashboard', icon: LayoutDashboard },
-  { label: 'Repository Analysis', icon: ScanSearch },
-  { label: 'AI Reviews', icon: Sparkles },
-  { label: 'Documentation', icon: FileText },
-  { label: 'Unit Tests', icon: FlaskConical },
-  { label: 'Settings', icon: Settings },
+  { label: 'Dashboard', icon: LayoutDashboard, href: '/dashboard' },
+  { label: 'Analyze Repository', icon: ScanSearch, href: '/dashboard' },
+  { label: 'Analysis Results', icon: Sparkles, href: '/results' },
 ]
 
 export function DashboardSidebar({
@@ -33,6 +33,8 @@ export function DashboardSidebar({
   open: boolean
   onClose: () => void
 }) {
+  const pathname = usePathname()
+
   return (
     <>
       {/* Mobile overlay */}
@@ -51,14 +53,14 @@ export function DashboardSidebar({
         }`}
       >
         <div className="flex h-16 items-center justify-between border-b border-border px-5">
-          <a href="#" className="flex items-center gap-2">
+          <Link href="/" className="flex items-center gap-2">
             <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/15 text-primary ring-1 ring-primary/30">
               <Terminal className="h-4 w-4" />
             </span>
             <span className="text-base font-semibold tracking-tight">
               DevPilot <span className="text-primary">AI</span>
             </span>
-          </a>
+          </Link>
           <button
             type="button"
             aria-label="Close sidebar"
@@ -71,13 +73,14 @@ export function DashboardSidebar({
 
         <nav className="flex-1 overflow-y-auto p-3">
           <ul className="flex flex-col gap-1">
-            {navItems.map((item, index) => {
+            {navItems.map((item) => {
               const Icon = item.icon
-              const active = index === 0
+              const active = pathname === item.href
               return (
                 <li key={item.label}>
-                  <a
-                    href="#"
+                  <Link
+                    href={item.href}
+                    onClick={onClose}
                     aria-current={active ? 'page' : undefined}
                     className={`group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all ${
                       active
@@ -87,7 +90,7 @@ export function DashboardSidebar({
                   >
                     <Icon className="h-4 w-4 shrink-0" />
                     <span className="truncate">{item.label}</span>
-                  </a>
+                  </Link>
                 </li>
               )
             })}
@@ -96,12 +99,13 @@ export function DashboardSidebar({
 
         <div className="border-t border-border p-3">
           <div className="glass rounded-lg border border-border p-4">
-            <p className="text-sm font-medium">Pro plan</p>
+            <p className="text-xs font-semibold uppercase tracking-wider text-primary">Live AI Engine</p>
             <p className="mt-1 text-xs text-muted-foreground">
-              320 / 500 analyses used this month.
+              Google Gemini Flash AI Active
             </p>
-            <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-secondary">
-              <div className="h-full w-[64%] rounded-full bg-primary" />
+            <div className="mt-2 flex items-center gap-1.5 text-[11px] font-medium text-emerald-400">
+              <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+              <span>Real-time Code Review</span>
             </div>
           </div>
         </div>

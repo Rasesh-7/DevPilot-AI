@@ -1,17 +1,19 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { Terminal, Menu, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
 const links = [
-  { label: 'Home', href: '#home' },
-  { label: 'Features', href: '#features' },
+  { label: 'Home', href: '/#home' },
+  { label: 'Features', href: '/#features' },
   { label: 'Dashboard', href: '/dashboard' },
-  { label: 'About', href: '#about' },
+  { label: 'About', href: '/#about' },
 ]
 
 export function SiteNavbar() {
+  const router = useRouter()
   const [scrolled, setScrolled] = useState(false)
   const [open, setOpen] = useState(false)
 
@@ -22,6 +24,10 @@ export function SiteNavbar() {
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
+  const handleAnalyzeClick = () => {
+    router.push('/dashboard')
+  }
+
   return (
     <header
       className={`fixed inset-x-0 top-0 z-50 transition-all duration-300 ${
@@ -29,7 +35,7 @@ export function SiteNavbar() {
       }`}
     >
       <nav className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 md:px-6">
-        <a href="#home" className="flex items-center gap-2">
+        <a href="/" className="flex items-center gap-2">
           <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/15 text-primary ring-1 ring-primary/30">
             <Terminal className="h-4 w-4" />
           </span>
@@ -52,7 +58,10 @@ export function SiteNavbar() {
         </ul>
 
         <div className="hidden md:block">
-          <Button className="bg-primary text-primary-foreground hover:bg-primary/90">
+          <Button
+            onClick={handleAnalyzeClick}
+            className="bg-primary text-primary-foreground hover:bg-primary/90"
+          >
             Analyze Repository
           </Button>
         </div>
@@ -82,7 +91,13 @@ export function SiteNavbar() {
               </li>
             ))}
             <li className="pt-2">
-              <Button className="w-full bg-primary text-primary-foreground hover:bg-primary/90">
+              <Button
+                onClick={() => {
+                  setOpen(false)
+                  handleAnalyzeClick()
+                }}
+                className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
+              >
                 Analyze Repository
               </Button>
             </li>

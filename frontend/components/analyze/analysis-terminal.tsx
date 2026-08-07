@@ -5,13 +5,14 @@ import { useEffect, useRef } from 'react'
 type TerminalLine = {
   id: number
   text: string
-  tone: 'muted' | 'primary' | 'success'
+  tone: 'muted' | 'primary' | 'success' | 'error'
 }
 
 const toneClass: Record<TerminalLine['tone'], string> = {
   muted: 'text-muted-foreground',
   primary: 'text-primary',
   success: 'text-[#3fb950]',
+  error: 'text-[#d29922]',
 }
 
 export function AnalysisTerminal({ lines }: { lines: TerminalLine[] }) {

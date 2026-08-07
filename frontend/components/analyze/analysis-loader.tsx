@@ -1,13 +1,15 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { Sparkles, Check } from 'lucide-react'
 import { ScanIllustration } from '@/components/analyze/scan-illustration'
 import { AnalysisTerminal } from '@/components/analyze/analysis-terminal'
+import { checkBackendHealth, analyzeRepository, saveAnalysis } from '@/lib/api'
+import type { AnalysisResult } from '@/lib/api'
 
 const STEPS = [
-  'Connecting to GitHub...',
+  'Connecting to Backend & GitHub...',
   'Cloning Repository...',
   'Reading Files...',
   'Parsing Source Code...',
@@ -24,70 +26,134 @@ const STEPS = [
 type TerminalLine = {
   id: number
   text: string
-  tone: 'muted' | 'primary' | 'success'
+  tone: 'muted' | 'primary' | 'success' | 'error'
 }
-
-// One or more log lines emitted as each step begins.
-const STEP_LOGS: { text: string; tone: TerminalLine['tone'] }[][] = [
-  [{ text: 'Connecting to github.com/acme/payments-api...', tone: 'primary' }],
-  [{ text: 'Cloning repository...', tone: 'muted' }],
-  [
-    { text: '324 files loaded', tone: 'success' },
-    { text: 'Indexing project tree...', tone: 'muted' },
-  ],
-  [{ text: 'Parsing source code (TypeScript, 41k LOC)...', tone: 'muted' }],
-  [{ text: 'Running static analysis...', tone: 'primary' }],
-  [{ text: 'AI reviewing code... 3 bugs detected', tone: 'muted' }],
-  [{ text: 'Scanning dependencies for CVEs... 1 issue', tone: 'muted' }],
-  [{ text: 'Detecting code smells... 12 findings', tone: 'muted' }],
-  [{ text: 'Quality score computed: 87 / 100', tone: 'success' }],
-  [{ text: 'Documentation generated successfully...', tone: 'success' }],
-  [{ text: 'Unit tests created — 96% coverage', tone: 'success' }],
-  [{ text: 'Compiling final report...', tone: 'primary' }],
-]
 
 export function AnalysisLoader() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const repoUrl = searchParams.get('url') || 'https://github.com/acme/payments-api'
   const [progress, setProgress] = useState(0)
   const [stepIndex, setStepIndex] = useState(0)
   const [lines, setLines] = useState<TerminalLine[]>([])
-  const emittedRef = useRef<Set<number>>(new Set())
   const lineIdRef = useRef(0)
   const doneRef = useRef(false)
+  const analysisRef = useRef<AnalysisResult | null>(null)
+  const backendDoneRef = useRef(false)
 
-  // Drive the progress bar smoothly toward 100%.
+  // Helper to push a new terminal line
+  const pushLine = (text: string, tone: TerminalLine['tone'] = 'muted') => {
+    setLines((prev) => [
+      ...prev,
+      { id: lineIdRef.current++, text, tone },
+    ])
+  }
+
+  // ── Call the real backend ──────────────────────────────────────
+  useEffect(() => {
+    let cancelled = false
+
+    async function runAnalysis() {
+      // Step 1: Health check
+      try {
+        const health = await checkBackendHealth()
+        if (cancelled) return
+        pushLine(
+          `✓ Backend connected — status: ${health.status}`,
+          'success',
+        )
+      } catch {
+        if (cancelled) return
+        pushLine(
+          '⚠ Could not reach backend at localhost:8000 — running in demo mode',
+          'error',
+        )
+      }
+
+      // Step 2: Full analysis
+      pushLine(`→ Sending ${repoUrl} to backend for analysis...`, 'primary')
+      try {
+        const result = await analyzeRepository(repoUrl)
+        if (cancelled) return
+
+        analysisRef.current = result
+        saveAnalysis(result)
+
+        // Log real data into the terminal
+        const meta = result.repo_meta
+        pushLine(`✓ Repository: ${meta.full_name || `${meta.owner}/${meta.repo}`}`, 'success')
+        pushLine(`  Language: ${meta.language} · ${meta.total_files} files · ${meta.lines_of_code.toLocaleString()} LOC`, 'muted')
+        pushLine(`  ★ ${meta.stars} stars · ${meta.forks} forks`, 'muted')
+
+        if (result.bugs.length > 0) {
+          const critical = result.bugs.filter(b => b.severity === 'critical').length
+          const high = result.bugs.filter(b => b.severity === 'high').length
+          pushLine(`🐛 ${result.bugs.length} bugs detected (${critical} critical, ${high} high)`, 'primary')
+        }
+        if (result.security_issues.length > 0) {
+          pushLine(`🛡 ${result.security_issues.length} security issues found`, 'primary')
+        }
+        if (result.code_smells.length > 0) {
+          const total = result.code_smells.reduce((s, c) => s + c.count, 0)
+          pushLine(`👃 ${total} code smell instances across ${result.code_smells.length} categories`, 'muted')
+        }
+        pushLine(`📊 Quality score: ${result.quality_score} / 100`, 'success')
+        pushLine(`📝 Documentation generated`, 'success')
+        pushLine(`✓ Analysis complete — preparing report...`, 'success')
+
+        backendDoneRef.current = true
+      } catch (err) {
+        if (cancelled) return
+        pushLine(
+          `✗ Analysis failed: ${(err as Error).message}`,
+          'error',
+        )
+        pushLine('  Running in demo mode with sample data...', 'muted')
+        backendDoneRef.current = true
+      }
+    }
+
+    runAnalysis()
+    return () => { cancelled = true }
+  }, [repoUrl])
+
+  // ── Drive the progress bar ────────────────────────────────────
   useEffect(() => {
     const interval = setInterval(() => {
       setProgress((prev) => {
         if (prev >= 100) return 100
-        const remaining = 100 - prev
-        // ease-out: slower as it approaches the end, with slight jitter
-        const step = Math.max(0.4, remaining * 0.03 + Math.random() * 0.8)
-        return Math.min(100, prev + step)
+
+        // If backend is done, accelerate to 100%
+        if (backendDoneRef.current && prev < 95) {
+          return Math.min(100, prev + 3)
+        }
+
+        // Otherwise ease-out toward ~90%, waiting for backend
+        const cap = backendDoneRef.current ? 100 : 88
+        const remaining = cap - prev
+        const step = Math.max(0.3, remaining * 0.025 + Math.random() * 0.6)
+        return Math.min(cap, prev + step)
       })
     }, 120)
     return () => clearInterval(interval)
   }, [])
 
-  // Derive the active step and emit terminal logs as thresholds are crossed.
+  // ── Derive step index from progress ───────────────────────────
   useEffect(() => {
     const index = Math.min(STEPS.length - 1, Math.floor((progress / 100) * STEPS.length))
     setStepIndex(index)
 
-    for (let i = 0; i <= index; i++) {
-      if (!emittedRef.current.has(i)) {
-        emittedRef.current.add(i)
-        const logs = STEP_LOGS[i] ?? []
-        setLines((prev) => [
-          ...prev,
-          ...logs.map((l) => ({ id: lineIdRef.current++, text: l.text, tone: l.tone })),
-        ])
-      }
-    }
-
+    // Redirect when complete
     if (progress >= 100 && !doneRef.current) {
       doneRef.current = true
-      const timeout = setTimeout(() => router.push('/dashboard'), 1100)
+      const timeout = setTimeout(() => {
+        // If we have real results, go to results page; otherwise dashboard
+        if (analysisRef.current) {
+          router.push('/results')
+        } else {
+          router.push('/dashboard')
+        }
+      }, 1100)
       return () => clearTimeout(timeout)
     }
   }, [progress, router])

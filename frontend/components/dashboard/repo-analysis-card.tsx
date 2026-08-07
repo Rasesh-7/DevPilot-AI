@@ -1,10 +1,12 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { ArrowRight, Loader2 } from 'lucide-react'
 import { GithubIcon } from '@/components/brand-icons'
 
 export function RepoAnalysisCard() {
+  const router = useRouter()
   const [url, setUrl] = useState('')
   const [loading, setLoading] = useState(false)
 
@@ -12,8 +14,7 @@ export function RepoAnalysisCard() {
     e.preventDefault()
     if (!url.trim()) return
     setLoading(true)
-    // In a real app this would call the backend; here we just simulate a delay.
-    setTimeout(() => setLoading(false), 2000)
+    router.push(`/analyze?url=${encodeURIComponent(url.trim())}`)
   }
 
   return (
@@ -45,12 +46,13 @@ export function RepoAnalysisCard() {
             placeholder="https://github.com/owner/repo"
             aria-label="GitHub repository URL"
             className="h-11 w-full rounded-lg border border-border bg-input/60 pl-10 pr-3 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
+            required
           />
         </div>
         <button
           type="submit"
           disabled={loading || !url.trim()}
-          className="group inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-primary px-6 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:pointer-events-none disabled:opacity-50"
+          className="group inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-primary px-6 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:pointer-events-none disabled:opacity-50 shrink-0"
         >
           {loading ? (
             <>
