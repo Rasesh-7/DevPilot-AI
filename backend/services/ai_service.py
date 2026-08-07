@@ -38,9 +38,11 @@ async def run_ai_analysis(
 
         candidate_models = [
             "gemini-flash-latest",
+            "gemini-2.5-flash",
+            "gemini-2.0-flash",
+            "gemini-1.5-flash",
             "gemini-3.5-flash",
             "gemini-3.6-flash",
-            "gemini-2.0-flash",
         ]
 
         for model_name in candidate_models:
