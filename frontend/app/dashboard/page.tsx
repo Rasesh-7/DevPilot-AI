@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { DashboardShell } from '@/components/dashboard/dashboard-shell'
 import { RepoAnalysisCard } from '@/components/dashboard/repo-analysis-card'
 import { AnalyticsCards } from '@/components/dashboard/analytics-cards'
+import { RepoHealthChart } from '@/components/dashboard/repo-health-chart'
 import { RecentReviewsTable } from '@/components/dashboard/recent-reviews-table'
 
 export const metadata: Metadata = {
@@ -30,6 +31,10 @@ export default function DashboardPage() {
         </div>
 
         <div className="animate-fade-up" style={{ animationDelay: '180ms' }}>
+          <RepoHealthChart />
+        </div>
+
+        <div className="animate-fade-up" style={{ animationDelay: '240ms' }}>
           <RecentReviewsTable />
         </div>
       </div>

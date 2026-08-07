@@ -43,9 +43,14 @@ export function RecentReviewsTable() {
             })
           : 'Recent'
 
+        const repoName = item.repo_meta?.full_name || 
+          (item.repo_meta?.owner && item.repo_meta?.repo && item.repo_meta.owner !== 'local' ? `${item.repo_meta.owner}/${item.repo_meta.repo}` : null) ||
+          item.repo_meta?.repo ||
+          (item.source_type === 'zip' ? 'Zip Archive' : item.source_type === 'snippet' ? 'Code Snippet' : 'Repository')
+
         return {
           id: item.id,
-          repo: item.repo_meta?.full_name || `${item.repo_meta?.owner}/${item.repo_meta?.repo}`,
+          repo: repoName,
           branch: item.repo_meta?.default_branch || 'main',
           score: item.quality_score || 0,
           issues: totalIssues,

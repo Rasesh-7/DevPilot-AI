@@ -15,6 +15,8 @@ import {
   SecurityAnalysisCard,
   CodeSmellsCard,
   PerformanceCard,
+  TestSuggestionsCard,
+  CommitMessagesCard,
 } from '@/components/results/detail-cards'
 
 export default function ResultsPage() {
@@ -30,6 +32,19 @@ export default function ResultsPage() {
     setResult(data)
   }, [router])
 
+  const handleExportJson = () => {
+    if (!result) return
+    const blob = new Blob([JSON.stringify(result, null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `devpilot-analysis-${result.repo_meta?.repo || 'repo'}-${result.id}.json`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+  }
+
   if (!result) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background text-foreground">
@@ -39,6 +54,7 @@ export default function ResultsPage() {
   }
 
   const meta = result.repo_meta
+  const isGithub = result.source_type === 'github' || (meta && meta.owner !== 'local')
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -54,33 +70,47 @@ export default function ResultsPage() {
             <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-0.5" />
             Back to Dashboard
           </button>
-          <div className="flex gap-2">
-            <a
-              href={`https://github.com/${meta.owner}/${meta.repo}`}
-              target="_blank"
-              rel="noopener noreferrer"
+          <div className="flex items-center gap-2">
+            <span className="mr-2 rounded-full border border-border bg-secondary/80 px-3 py-1 text-xs font-medium text-primary">
+              {result.source_type === 'zip' ? 'Zip Archive' : result.source_type === 'snippet' ? 'Code Snippet' : 'GitHub Repo'}
+            </span>
+            <button
+              onClick={handleExportJson}
               className="inline-flex items-center gap-2 rounded-lg border border-border bg-secondary/60 px-4 py-2 text-sm font-medium text-foreground transition-colors hover:border-primary/40"
             >
-              <ExternalLink className="h-4 w-4" />
-              View on GitHub
-            </a>
+              <Download className="h-4 w-4" />
+              Export JSON
+            </button>
+            {isGithub && meta?.owner && meta?.repo && (
+              <a
+                href={`https://github.com/${meta.owner}/${meta.repo}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 rounded-lg border border-border bg-secondary/60 px-4 py-2 text-sm font-medium text-foreground transition-colors hover:border-primary/40"
+              >
+                <ExternalLink className="h-4 w-4" />
+                View on GitHub
+              </a>
+            )}
           </div>
         </div>
 
         {/* Repo header */}
-        <div className="animate-fade-up">
-          <RepoHeader
-            owner={meta.owner}
-            repo={meta.repo}
-            fullName={meta.full_name}
-            description={meta.description}
-            language={meta.language}
-            totalFiles={meta.total_files}
-            defaultBranch={meta.default_branch}
-            lastPushed={meta.last_pushed}
-            stars={meta.stars}
-          />
-        </div>
+        {meta && (
+          <div className="animate-fade-up">
+            <RepoHeader
+              owner={meta.owner}
+              repo={meta.repo}
+              fullName={meta.full_name}
+              description={meta.description}
+              language={meta.language}
+              totalFiles={meta.total_files}
+              defaultBranch={meta.default_branch}
+              lastPushed={meta.last_pushed}
+              stars={meta.stars}
+            />
+          </div>
+        )}
 
         {/* Score + AI Summary row */}
         <div className="mt-6 grid gap-6 lg:grid-cols-3">
@@ -111,9 +141,21 @@ export default function ResultsPage() {
           </div>
         </div>
 
+        {/* Test Suggestions Card */}
+        <div className="animate-fade-up mt-6" style={{ animationDelay: '400ms' }}>
+          <TestSuggestionsCard suggestions={result.test_suggestions} />
+        </div>
+
+        {/* Commit Message Suggestions */}
+        {result.suggested_commit_messages && result.suggested_commit_messages.length > 0 && (
+          <div className="animate-fade-up mt-6" style={{ animationDelay: '430ms' }}>
+            <CommitMessagesCard messages={result.suggested_commit_messages} />
+          </div>
+        )}
+
         {/* Documentation snippet */}
         {result.documentation_snippet && (
-          <div className="animate-fade-up mt-6" style={{ animationDelay: '420ms' }}>
+          <div className="animate-fade-up mt-6" style={{ animationDelay: '460ms' }}>
             <DocumentationCard
               snippet={result.documentation_snippet}
               repoName={meta.repo}
@@ -122,7 +164,7 @@ export default function ResultsPage() {
         )}
 
         {/* Analysis metadata */}
-        <div className="animate-fade-up mt-6 text-center" style={{ animationDelay: '480ms' }}>
+        <div className="animate-fade-up mt-6 text-center" style={{ animationDelay: '520ms' }}>
           <p className="text-xs text-muted-foreground">
             Analysis ID: {result.id} · Analyzed at:{' '}
             {new Date(result.analyzed_at).toLocaleString()}
