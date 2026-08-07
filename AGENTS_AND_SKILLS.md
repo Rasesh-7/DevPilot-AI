@@ -6,7 +6,7 @@ This document details the custom agent and custom skill implemented for DevPilot
 
 ## 1. Custom Agent: `Code Auditor`
 
-- **Location**: [`.agents/agents/code-auditor.md`](file:///c:/Users/KIIT/Downloads/DevPlot%20AI/DevPilot-AI/.agents/agents/code-auditor.md)
+- **Location**: [`.agents/agents/code-auditor.md`](./.agents/agents/code-auditor.md)
 - **Role**: Autonomous security and maintainability auditor for software repositories.
 - **Trigger**: Initiated whenever a user submits a repository analysis request from the dashboard or landing page.
 - **Capabilities**:
@@ -18,7 +18,7 @@ This document details the custom agent and custom skill implemented for DevPilot
 
 ## 2. Custom Skill: `repository-reviewer`
 
-- **Location**: [`.agents/skills/code-reviewer/SKILL.md`](file:///c:/Users/KIIT/Downloads/DevPlot%20AI/DevPilot-AI/.agents/skills/code-reviewer/SKILL.md)
+- **Location**: [`.agents/skills/code-reviewer/SKILL.md`](./.agents/skills/code-reviewer/SKILL.md)
 - **Description**: Specialized skill enabling agents to parse GitHub trees, sample source code files, detect bugs/smells, and build formatted developer documentation.
 - **Features**:
   - Repository tree extraction & code filtering.

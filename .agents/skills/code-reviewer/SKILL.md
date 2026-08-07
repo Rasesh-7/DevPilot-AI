@@ -28,3 +28,4 @@ When reviewing a repository:
 1. Inspect primary source code files sampled from the tree.
 2. Formulate JSON analysis adhering strictly to `AnalysisResult` schema.
 3. Compute sanitized integer `quality_score` (0–100).
+4. Reference all project source files using relative repository paths (e.g., `src/index.ts` or `./ARCHITECTURE.md`); never resolve or output host-specific absolute file system paths.

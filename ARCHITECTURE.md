@@ -13,7 +13,7 @@ DevPilot AI is an AI-powered code review platform that analyzes public GitHub re
                                           │
                                           ▼
                      ┌─────────────────────────────────────────┐
-                     │     Frontend: Next.js 16 (React 19)     │
+                     │   Frontend: Next.js App Router (React 19)│
                      │  Vanilla CSS / Tailwind, TypeScript     │
                      └────────────────────┬────────────────────┘
                                           │
@@ -31,7 +31,7 @@ DevPilot AI is an AI-powered code review platform that analyzes public GitHub re
 
 ### Stack Components
 
-- **Frontend**: Next.js 16 (App Router), React 19, TypeScript, Vanilla CSS + Tailwind, Lucide Icons.
+- **Frontend**: Next.js (App Router), React 19, TypeScript, Vanilla CSS + Tailwind, Lucide Icons.
 - **Backend**: Python 3.13, FastAPI, Uvicorn, Pydantic, HTTPX, Google Generative AI (`google-generativeai`).
 - **AI Engine**: Google Gemini Flash (`gemini-flash-latest`, `gemini-2.0-flash`) with dynamic repository-aware fallback engine when offline.
 - **Integrations**: GitHub REST API v3 for fetching repository metadata, file trees, and raw file contents.

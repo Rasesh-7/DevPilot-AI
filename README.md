@@ -1,6 +1,6 @@
 # DevPilot AI — Autonomous Code Review & Repository Analysis Partner
 
-DevPilot AI is an AI-powered code reviewer built with Next.js 16, React 19, FastAPI, and Google Gemini Flash AI. It provides real-time code auditing, vulnerability scanning, maintainability scoring, and automatic developer guide compilation for any public GitHub repository.
+DevPilot AI is an AI-powered code reviewer built with Next.js (App Router), React 19, FastAPI, and Google Gemini Flash AI. It provides real-time code auditing, vulnerability scanning, maintainability scoring, and automatic developer guide compilation for any public GitHub repository.
 
 ---
 
@@ -8,13 +8,13 @@ DevPilot AI is an AI-powered code reviewer built with Next.js 16, React 19, Fast
 
 This repository satisfies all 5 required submission checkpoints:
 
-1. 📑 **Architecture Document**: [`ARCHITECTURE.md`](file:///c:/Users/KIIT/Downloads/DevPlot%20AI/DevPilot-AI/ARCHITECTURE.md) — Describes stack, data models, API endpoints, and high-level design.
-2. 📜 **Agent Rules & Constitution**: [`AGENTS.md`](file:///c:/Users/KIIT/Downloads/DevPlot%20AI/DevPilot-AI/AGENTS.md) — Behavioral rules, audit principles, and issue severity thresholds.
+1. 📑 **Architecture Document**: [`ARCHITECTURE.md`](./ARCHITECTURE.md) — Describes stack, data models, API endpoints, and high-level design.
+2. 📜 **Agent Rules & Constitution**: [`AGENTS.md`](./AGENTS.md) — Behavioral rules, audit principles, and issue severity thresholds.
 3. ⚡ **Working Code**: Fully functional Next.js + FastAPI codebase with 0 build errors.
-4. 🤖 **Custom Agent & Custom Skill**: Defined in `.agents/` and fully documented in [`AGENTS_AND_SKILLS.md`](file:///c:/Users/KIIT/Downloads/DevPlot%20AI/DevPilot-AI/AGENTS_AND_SKILLS.md).
-   - Custom Agent: `Code Auditor` ([`.agents/agents/code-auditor.md`](file:///c:/Users/KIIT/Downloads/DevPlot%20AI/DevPilot-AI/.agents/agents/code-auditor.md))
-   - Custom Skill: `repository-reviewer` ([`.agents/skills/code-reviewer/SKILL.md`](file:///c:/Users/KIIT/Downloads/DevPlot%20AI/DevPilot-AI/.agents/skills/code-reviewer/SKILL.md))
-5. 🚀 **Green CI/CD Pipeline**: GitHub Actions workflow configured at [`.github/workflows/ci.yml`](file:///c:/Users/KIIT/Downloads/DevPlot%20AI/DevPilot-AI/.github/workflows/ci.yml).
+4. 🤖 **Custom Agent & Custom Skill**: Defined in `.agents/` and fully documented in [`AGENTS_AND_SKILLS.md`](./AGENTS_AND_SKILLS.md).
+   - Custom Agent: `Code Auditor` ([`.agents/agents/code-auditor.md`](./.agents/agents/code-auditor.md))
+   - Custom Skill: `repository-reviewer` ([`.agents/skills/code-reviewer/SKILL.md`](./.agents/skills/code-reviewer/SKILL.md))
+5. 🚀 **Green CI/CD Pipeline**: GitHub Actions workflow configured at [`.github/workflows/ci.yml`](./.github/workflows/ci.yml).
 
 ---
 
