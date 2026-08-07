@@ -3,6 +3,7 @@ Pydantic models for the /analyze response.
 """
 
 from __future__ import annotations
+from typing import Optional
 from pydantic import BaseModel, Field
 
 
@@ -62,7 +63,8 @@ class TestSuggestion(BaseModel):
 class AnalysisResult(BaseModel):
     """The full analysis payload returned by POST /analyze."""
     id: str = ""
-    repo_meta: RepoMeta
+    repo_meta: Optional[RepoMeta] = None
+    source_type: str = "github"
     quality_score: int = 0
     summary: str = ""
     tags: list[str] = Field(default_factory=list)

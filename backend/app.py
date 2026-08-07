@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from routes.analyze import router as analyze_router
 from routes.health import router as health_router
+from routes.upload import router as upload_router
 
 app = FastAPI(
     title="DevPilot AI Backend",
@@ -20,6 +21,7 @@ app.add_middleware(
 
 app.include_router(health_router)
 app.include_router(analyze_router)
+app.include_router(upload_router)
 
 
 @app.get("/")
