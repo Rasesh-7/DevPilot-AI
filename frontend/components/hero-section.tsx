@@ -8,7 +8,7 @@ import { GithubIcon } from '@/components/brand-icons'
 
 export function HeroSection() {
   const router = useRouter()
-  const [repoUrl, setRepoUrl] = useState('https://github.com/acme/payments-api')
+  const [repoUrl, setRepoUrl] = useState('')
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -69,7 +69,7 @@ export function HeroSection() {
                 type="url"
                 value={repoUrl}
                 onChange={(e) => setRepoUrl(e.target.value)}
-                placeholder="https://github.com/username/repository"
+                placeholder="Paste your GitHub repository URL..."
                 className="w-full rounded-md border border-border bg-background/80 py-2.5 pl-10 pr-4 text-sm placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                 required
               />
