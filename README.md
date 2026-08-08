@@ -375,9 +375,9 @@ For full details, see [`AGENTS_AND_SKILLS.md`](./AGENTS_AND_SKILLS.md).
 
 | Member | Role | Responsibilities |
 | :--- | :--- | :--- |
-| Member 1 | Frontend Lead | Frontend UI, dashboard, and results page |
-| Member 2 | Backend & AI Lead | FastAPI, repository analysis, AI integration |
-| Member 3 | DevOps & QA Lead | CI/CD, testing, documentation, deployment |
+| Snehankita Dey | Frontend Lead | Frontend UI, dashboard, and results page |
+| Ashmit Roy | Backend & AI Lead | FastAPI, repository analysis, AI integration |
+| Rasesh Bose | DevOps & QA Lead | CI/CD, testing, documentation, deployment |
 
 ---
 
