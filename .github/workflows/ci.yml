@@ -7,6 +7,7 @@ on:
     branches: [ main, master ]
 
 jobs:
+  # ── 1. Backend Unit Tests & Code Quality ───────────────────────────
   backend-test:
     name: Backend Unit Tests (Python)
     runs-on: ubuntu-latest
@@ -35,8 +36,10 @@ jobs:
           pip install flake8
           flake8 backend/ --max-line-length=120 --exclude=backend/__pycache__,backend/.venv --count --statistics || true
 
+  # ── 2. Frontend Build & Type Check ─────────────────────────────────
   frontend-build:
     name: Frontend Build & Type Check (Next.js)
+    needs: backend-test
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
@@ -57,10 +60,11 @@ jobs:
         working-directory: ./frontend
         run: npm run build
 
+  # ── 3. Playwright E2E Tests & Artifact Upload ──────────────────────
   playwright-e2e:
     name: Playwright E2E Tests (Next.js)
-    runs-on: ubuntu-latest
     needs: frontend-build
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -80,7 +84,7 @@ jobs:
         working-directory: ./frontend
         run: npx playwright install --with-deps chromium
 
-      - name: Update Playwright Config for CI (chromium)
+      - name: Update Playwright Config for CI
         working-directory: ./frontend
         run: |
           cat > playwright.config.ts << 'EOF'
@@ -123,7 +127,7 @@ jobs:
         env:
           CI: true
 
-      - name: Upload Playwright Report
+      - name: Upload Playwright HTML Report
         uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -131,9 +135,10 @@ jobs:
           path: frontend/playwright-report/
           retention-days: 30
 
+  # ── 4. Render Deployment (Needs Playwright E2E & Backend Tests) ─────
   render-deploy:
     name: Render Backend Deployment
-    needs: backend-test
+    needs: [backend-test, playwright-e2e]
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
