@@ -1,5 +1,7 @@
 # DevPilot AI
 
+VERCEL DEPLOYED LINK:-https://dev-pilot-ai-three.vercel.app/
+
 [![CI/CD Pipeline](https://github.com/Rasesh-7/DevPilot-AI/actions/workflows/ci.yml/badge.svg)](https://github.com/Rasesh-7/DevPilot-AI/actions/workflows/ci.yml)
 
 DevPilot AI is an AI-powered developer productivity platform that analyzes GitHub repositories, uploaded zip archives, and code snippets to detect bugs, identify security vulnerabilities, locate code smells, suggest performance improvements, recommend unit tests, and generate developer documentation — all through a modern web dashboard.
@@ -383,10 +385,44 @@ For full details, see [`AGENTS_AND_SKILLS.md`](./AGENTS_AND_SKILLS.md).
 
 ## Demo
 
-- **Demo video**: Coming soon
-- **Live application**: Coming soon
+- **Demo video**: https://drive.google.com/file/d/1V_OXWcWaaX-KFoI6db0edeH9_Nnf4fu8/view?usp=drivesdk
+- **Live application**: https://dev-pilot-ai-three.vercel.app/
 
 ---
+
+## SCREENSHOTS 
+# 📸 Application Preview
+
+## 🏠 Home Screen
+
+<p align="center">
+  <img src="assets/Home_Screen.jpeg" alt="Home Screen" width="1000">
+</p>
+
+---
+
+## ✨ Features
+
+<p align="center">
+  <img src="assets/Features.jpeg" alt="Features" width="1000">
+</p>
+
+---
+
+## 📊 Dashboard
+
+<p align="center">
+  <img src="assets/Dashboard.jpeg" alt="Dashboard" width="1000">
+</p>
+
+---
+
+## 🔍 Analyze Page
+
+<p align="center">
+  <img src="assets/Analyze_Page.jpeg" alt="Analyze Page" width="1000">
+</p>
+
 
 ## Repository
 
