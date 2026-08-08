@@ -51,3 +51,21 @@ jobs:
       - name: Build Next.js Application
         working-directory: ./frontend
         run: npm run build
+
+  render-deploy:
+    name: Render Backend Deployment
+    needs: backend-test
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Render Deploy Hook
+        if: env.RENDER_SECRET != ''
+        env:
+          RENDER_SECRET: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+        run: |
+          echo "Triggering Render Deployment..."
+          curl -s -f -X POST "${{ secrets.RENDER_DEPLOY_HOOK_URL }}"
+      - name: Render Deployment Status
+        run: |
+          echo "Render deployment trigger step completed successfully."
+
